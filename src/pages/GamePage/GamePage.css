@@ -1,0 +1,83 @@
+/* Estilo general de la página */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+.game-container {
+  text-align: center;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #2c3e50;
+}
+
+/* Estilo de las tablas */
+.tables-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+table {
+  border-collapse: collapse;
+  border: 2px solid #2c3e50;
+  text-align: center;
+  width: 80px;
+  height: 200px;
+}
+
+td {
+  border: 1px solid #7f8c8d;
+  height: 20px;
+  width: 20px;
+  position: relative;
+}
+
+td::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+  height: 15px;
+  background-color: red;
+  border-radius: 50%;
+  display: none;
+}
+
+td.active::before {
+  display: block;
+}
+
+/* Botones */
+.buttons-container {
+  margin-top: 2rem;
+}
+
+button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 1rem;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
