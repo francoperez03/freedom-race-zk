@@ -1,39 +1,58 @@
-import { useEffect, useState } from 'react';
-import './CharacterSelectionPage.css';
-import { PXEFactory } from '../../factories/PXEFactory';
-import { AztecAddress } from '@aztec/aztec.js';
-import { useNavigate } from 'react-router-dom'; // Para navegar entre páginas
+import { useEffect, useState } from "react";
+import "./CharacterSelectionPage.css";
+import { PXEFactory } from "../../factories/PXEFactory";
+import { AztecAddress } from "@aztec/aztec.js";
+import { useNavigate } from "react-router-dom";
+import { getDeployedTestAccountsWallets } from "@aztec/accounts/testing";
+import { deployContract } from "../../services/contractService"; // Importar el servicio
 
 const CharacterSelectionPage = () => {
   const [pxeConnected, setPxeConnected] = useState(false);
   const [accounts, setAccounts] = useState<AztecAddress[]>([]);
-  const [selectedCharacter, setSelectedCharacter] = useState<number | null>(null); // Estado para el personaje seleccionado
-  const [error, setError] = useState<string>('');
-  const navigate = useNavigate(); // Hook para cambiar de pantalla
+  const [selectedCharacter, setSelectedCharacter] = useState<number | null>(null);
+  const [error, setError] = useState<string>("");
+  const [isDeploying, setIsDeploying] = useState(false); // Estado para indicar si el contrato se está desplegando
+  const [contractAddress, setContractAddress] = useState<string | null>(null); // Dirección del contrato desplegado
+  const navigate = useNavigate();
 
   useEffect(() => {
     const connectToPXE = async () => {
       try {
         const pxe = await PXEFactory.getPXEInstance();
-
         const { l1ChainId } = await pxe.getNodeInfo();
         console.log(`Connected to chain ${l1ChainId}`);
         setPxeConnected(true);
 
         const userAccounts = await pxe.getRegisteredAccounts();
+        const wallets = await getDeployedTestAccountsWallets(pxe);
+        console.log("wallets", wallets);
         setAccounts(userAccounts.map((account) => account.address));
       } catch (err) {
         if (err instanceof Error) {
           console.error(`Error connecting to PXE: ${err.message}`);
         } else {
-          console.error('Error connecting to PXE:', err);
+          console.error("Error connecting to PXE:", err);
         }
-        setError('Failed to connect to PXE');
+        setError("Failed to connect to PXE");
       }
     };
 
     connectToPXE();
   }, []);
+
+  const handleDeployContract = async () => {
+    try {
+      setIsDeploying(true);
+      const address = await deployContract();
+      setContractAddress(address);
+      alert(`Contract deployed at ${address}`);
+    } catch (err) {
+      console.error("Error deploying contract:", err);
+      alert("Failed to deploy contract.");
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   const handleCharacterSelect = (index: number) => {
     setSelectedCharacter(index);
@@ -41,25 +60,25 @@ const CharacterSelectionPage = () => {
 
   const handlePlay = () => {
     if (selectedCharacter !== null) {
-      navigate('/game', { state: { selectedCharacter } }); // Navega a la pantalla del juego y pasa el personaje seleccionado
+      navigate("/game", { state: { selectedCharacter: accounts[0], indexCharacter: selectedCharacter } });
     }
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '2rem' }}>
+    <div style={{ textAlign: "center", padding: "2rem" }}>
       <h1>Freedom Race</h1>
-      <p>Status: {pxeConnected ? 'Connected to PXE' : error || 'Not connected to PXE'}</p>
-      <div style={{ marginTop: '1rem' }}>
+      <p>Status: {pxeConnected ? "Connected to PXE" : error || "Not connected to PXE"}</p>
+      <div style={{ marginTop: "1rem" }}>
         {accounts.length > 0 ? (
           accounts.map((account, index) => (
             <button
               key={index}
               style={{
-                padding: '0.5rem 1rem',
-                margin: '0.5rem',
-                border: selectedCharacter === index ? '2px solid green' : '1px solid gray',
-                borderRadius: '5px',
-                cursor: 'pointer',
+                padding: "0.5rem 1rem",
+                margin: "0.5rem",
+                border: selectedCharacter === index ? "2px solid green" : "1px solid gray",
+                borderRadius: "5px",
+                cursor: "pointer",
               }}
               onClick={() => handleCharacterSelect(index)}
             >
@@ -72,19 +91,35 @@ const CharacterSelectionPage = () => {
       </div>
       <button
         style={{
-          padding: '0.5rem 1rem',
-          marginTop: '1rem',
-          backgroundColor: selectedCharacter !== null ? 'blue' : 'gray',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: selectedCharacter !== null ? 'pointer' : 'not-allowed',
+          padding: "0.5rem 1rem",
+          marginTop: "1rem",
+          backgroundColor: selectedCharacter !== null ? "blue" : "gray",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: selectedCharacter !== null ? "pointer" : "not-allowed",
         }}
         onClick={handlePlay}
         disabled={selectedCharacter === null}
       >
         Jugar
       </button>
+      <button
+        style={{
+          padding: "0.5rem 1rem",
+          marginTop: "1rem",
+          backgroundColor: isDeploying ? "gray" : "green",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: isDeploying ? "not-allowed" : "pointer",
+        }}
+        onClick={handleDeployContract}
+        disabled={isDeploying}
+      >
+        {isDeploying ? "Deploying..." : "Deploy Contract"}
+      </button>
+      {contractAddress && <p>Contract deployed at: {contractAddress}</p>}
     </div>
   );
 };
